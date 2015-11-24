@@ -131,6 +131,9 @@ public class InstructionParser {
 			String[] lbl = s.split(";");
 			s = lbl[0];
 		}
+				
+		if (s.trim().length() == 0)
+			return null;
 		
 		Scanner io = new Scanner(s);
 		

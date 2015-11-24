@@ -30,7 +30,6 @@ public class Instruction {
 				opcode = OpcodeGenerator.generateMemTypeOpcode(op, args);
 				break;
 		}
-		
 	}
 	
 	public String toString() {
@@ -60,10 +59,10 @@ class OpcodeGenerator {
 			rd = Integer.parseInt(arr[0].substring(1));
 		}
 		
-		output |= rt;
+		output |= rs;
 		
 		output <<= 5;
-		output |= rs;
+		output |= rt;
 		
 		output <<= 5;
 		output |= rd;
@@ -92,7 +91,7 @@ class OpcodeGenerator {
 		
 		output |= InstructionFormat.getOpcode(op);
 		
-		output <<= 6;
+		output <<= 5;
 		output |= InstructionFormat.getExtOpcode(op);
 		
 		output <<= 5;
@@ -133,16 +132,24 @@ class OpcodeGenerator {
 	}
 
 	public static int generateMemTypeOpcode(String op, String args) throws Exception {
-		
-		String a, b, imm;
+		String hexConvert = "0123456789ABCDEF";
+		String a, b;
+		String add;
 		
 		String[] lbl = args.split(",");
 		b = lbl[0].trim(); // R5, 2000(R0) -> R5 AND 2000(R0)
 		
 		lbl = lbl[1].split("[()]"); // 2000(R0) -> 2000 AND R0 AND ''
-		a = lbl[0].trim();
-		imm = lbl[1].trim();
-		
+		a = lbl[1].trim();
+		add = lbl[0].trim();
+		if (add.length() > 4) {
+			add = add.substring(add.length()-4);
+		}
+		else if (add.length() < 4) {
+			String z = "0000";
+			add = add.length() < 4 ? z.substring(add.length()) + add : add;
+		}
+	
 		int output = 0;
 		
 		output |= InstructionFormat.getOpcode(op);
@@ -153,8 +160,10 @@ class OpcodeGenerator {
 		output <<= 5;
 		output |= Integer.parseInt(b.substring(1));
 		
-		output <<= 16;
-		output |= Integer.parseInt(imm);
+		for (int i = 0; i < 4; i++) {
+			output <<= 4;
+			output |= hexConvert.indexOf(add.charAt(i));
+		}
 		
 		return output;
 	}
@@ -185,7 +194,7 @@ class OpcodeGenerator {
 		output |= Integer.parseInt(arr[0].substring(1));
 		
 		output <<= 5;
-		output |= Integer.parseInt(arr[2].substring(1));
+		output |= Integer.parseInt(arr[2]);
 		
 		output <<= 6;
 		output |= InstructionFormat.getFunc(op);
