@@ -3,7 +3,7 @@ import java.util.Scanner;
 import java.util.ArrayList;
 
 public class InstructionParser {
-	public static ArrayList<Instruction> parse(File f) throws Exception {
+	public static ArrayList<Instruction> parseFile(File f) throws Exception {
 		Scanner io = new Scanner(f);
 		ArrayList<Instruction> opcodes = new ArrayList<Instruction>();
 		
@@ -30,8 +30,11 @@ public class InstructionParser {
 				
 				if (InstructionFormat.isLoadStore(instruction)) {
 					// expect a register
-					if (in[i] != regType)
+					if (in[i] != regType) {
+						io.close();
+						
 						throw new Exception(regType + "x register expected at col" + i);
+					}
 					
 					String rd = "";
 					while (i < in.length && in[i] != ' ' && in[i] != ';' && in[i] != ',') {
@@ -55,8 +58,11 @@ public class InstructionParser {
 						i++;
 					
 					// expect a register
-					if (in[i] != regType)
+					if (in[i] != regType) {
+						io.close();
+						
 						throw new Exception(regType + "x register expected at col" + i);
+					}
 
 					String rs = "";
 					while (i < in.length && in[i] != ' ' && in[i] != ';' && in[i] != ',') {
@@ -69,8 +75,11 @@ public class InstructionParser {
 				
 					while (i < in.length && argCount != 0) {
 						if (regCount > 0) {
-							if (in[i] != regType)
+							if (in[i] != regType) {
+								io.close();
+								
 								throw new Exception(regType + "x register expected at col" + i);
+							}
 							
 							while (i < in.length && in[i] != ' ' && in[i] != ';' && in[i] != ',') {
 								instruction += in[i];
@@ -110,7 +119,39 @@ public class InstructionParser {
 		return opcodes;
 	}
 	
+	public static Instruction parse(String s) {
+		String label = "", op, args;
+		if (s.contains(":")) {
+			String[] lbl = s.split(":");
+			label = lbl[0].trim();
+			s = lbl[1].trim();
+		}
+		
+		if (s.contains(";")) {
+			String[] lbl = s.split(";");
+			s = lbl[0];
+		}
+		
+		Scanner io = new Scanner(s);
+		
+		op = io.next();
+		args = io.nextLine().trim();
+		
+		io.close();
+		Instruction newInst = null;
+		
+		try {
+			newInst = new Instruction(label, op, args);
+		} catch (Exception e) {
+			System.err.println("lol it broke");
+			e.printStackTrace();
+		}
+		
+		return newInst;
+	}
+
 	public static int parseInstruction(String in) {
+		// Instruction arr = parse(in);
 		String[] arr = in.split("[ ,]"); // assume INST Rx,Ry,Rz muna
 		String type = InstructionFormat.getType(arr[0]);
 		

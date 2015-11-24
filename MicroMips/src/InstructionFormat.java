@@ -10,15 +10,17 @@ public class InstructionFormat {
 			case "MUL.S":
 				return "Extended R-type";
 			case "BEQ":
-			case "L.S":
-			case "S.S":
-			case "LW":
-			case "LWU":
-			case "SW":
-			case "DSLL":
 			case "ANDI":
 			case "DADDIU":
 				return "I-type";
+			case "LW":
+			case "LWU":
+			case "SW":
+			case "L.S":
+			case "S.S":
+				return "Mem-type";
+			case "DSLL":
+				return "Shift-type";
 			case "J":
 				return "J-type";
 				
@@ -81,6 +83,7 @@ public class InstructionFormat {
 			case "ADD.S":	return 0;
 			case "MUL.S":	return 2;
 			
+			case "DSLL" :	return 56;
 			default:
 				return 0;
 		}
