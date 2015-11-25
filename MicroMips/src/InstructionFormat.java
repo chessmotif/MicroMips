@@ -9,7 +9,7 @@ public class InstructionFormat {
 			case "ADD.S":
 			case "MUL.S":
 				return "Extended R-type";
-			case "BEQ":
+			case "BEQ": // maybe move to J-type or make new B-type
 			case "ANDI":
 			case "DADDIU":
 				return "I-type";
