@@ -1,3 +1,4 @@
+package cpu;
 public class InstructionFormat {
 	public static String getType(String instruction) {
 		switch(instruction) {

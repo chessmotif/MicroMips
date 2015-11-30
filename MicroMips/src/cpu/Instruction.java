@@ -1,3 +1,4 @@
+package cpu;
 
 public class Instruction {
 	// INST R1,R2,R3
@@ -9,6 +10,9 @@ public class Instruction {
 	public int opcode;
 	
 	public Instruction(String label, String op, String args) throws Exception {
+		this.op = op;
+		this.args = args;
+		
 		String type = InstructionFormat.getType(op);
 		switch(type) {
 			case "R-type":
@@ -33,7 +37,7 @@ public class Instruction {
 	}
 	
 	public String toString() {
-		return ((label.length() == 0)? "" : (label+": ")) + op + " " + args;
+		return op + " " + args;
 	}
 }
 
@@ -110,11 +114,21 @@ class OpcodeGenerator {
 	}
 	
 	public static int generateITypeOpcode(String op, String args) throws Exception {
+		String hexConvert = "0123456789ABCDEF";
 		
 		String[] arr = args.split(",");
 		for (int i = 0; i < arr.length; i++)
 			arr[i] = arr[i].trim();
 
+		String add = arr[2];
+		if (add.length() > 4) {
+			add = add.substring(add.length()-4);
+		}
+		else if (add.length() < 4) {
+			String z = "0000";
+			add = add.length() < 4 ? z.substring(add.length()) + add : add;
+		}
+		
 		int output = 0;
 		
 		output |= InstructionFormat.getOpcode(op);
@@ -124,9 +138,11 @@ class OpcodeGenerator {
 		
 		output <<= 5;
 		output |= Integer.parseInt(arr[0].substring(1));
-		
-		output <<= 16;
-		output |= Integer.parseInt(arr[2]);
+
+		for (int i = 0; i < 4; i++) {
+			output <<= 4;
+			output |= hexConvert.indexOf(add.charAt(i));
+		}
 		
 		return output;
 	}
@@ -169,13 +185,11 @@ class OpcodeGenerator {
 	}
 
 	public static int generateJTypeOpcode(String op, String args) {
-		// labels are address numbers only for now
 		int output = 0;
 		
 		output |= InstructionFormat.getOpcode(op);
 		
 		output <<= 26;
-		// this sucks and is wrong, consult memory first for the label
 		output |= Integer.parseInt(args) >> 2;
 		
 		return output;
