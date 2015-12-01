@@ -42,13 +42,13 @@ public class MipsFrame extends JFrame {
 		Container content = this.getContentPane();
 		content.setLayout(null);
 		
-		pipeline = new PipelineRegisterPanel(10, 350, 300, 311);
+		pipeline = new PipelineRegisterPanel(10, 10, 300, 431);
+		inst = new InstructionPanel(320, 10, 430, 230);
+ 		data = new DataPanel(320, 250, 430, 191);
+ 		map = new PipelineMapPanel(10, 450, 740, 210);
 		regs = new RegisterPanel(760, 10, 250, 650);
-		inst = new InstructionPanel(10, 10, 300, 330);
- 		data = new DataPanel(320, 10, 430, 180);
- 		map = new PipelineMapPanel(320, 200, 430, 200);
-		
-		content.add(pipeline);
+ 		
+ 		content.add(pipeline);
 		content.add(regs);
 		content.add(inst);
 		content.add(data);
@@ -75,6 +75,8 @@ public class MipsFrame extends JFrame {
 		load.addActionListener(new LoadFileActionListener(this));
 		JMenuItem reset = new JMenuItem("Reset");
 		reset.addActionListener(new ResetCPUActionListener(this));
+//		JMenuItem resetMem = new JMenuItem("Reset Memory");
+//		resetMem.addActionListener(new ResetAllActionListener(this));
 		JMenuItem runOne = new JMenuItem("Run Once");
 		runOne.addActionListener(new RunOnceActionListener(this));
 		JMenuItem runAll = new JMenuItem("Run All");
@@ -82,6 +84,7 @@ public class MipsFrame extends JFrame {
 
 		m.add(load);
 		m.add(reset);
+//		m.add(resetMem);
 		m.add(runOne);
 		m.add(runAll);
 		
@@ -136,6 +139,20 @@ class ResetCPUActionListener implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent arg0) {
 		PipelinedCPU.reset();
+		parent.updateUITable();
+	}
+}
+
+class ResetAllActionListener implements ActionListener {
+	public MipsFrame parent;
+
+	public ResetAllActionListener(MipsFrame p) {
+		parent = p;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		PipelinedCPU.resetAll();
 		parent.updateUITable();
 	}
 }

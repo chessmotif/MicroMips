@@ -101,9 +101,6 @@ class DataTableListener implements TableModelListener {
 		Object add = model.getValueAt(row, 0);
 		long dataConverted = 0;
         
-		System.out.println("change detected at " + row + "," + column);
-		System.out.println(data + "");
-		
 		if (data.toString().contains(" ")) {
 			data = data.toString().replace(" ", "");
 		}

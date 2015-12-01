@@ -9,13 +9,13 @@ public class InstructionParser {
 		Instruction[] out = new Instruction[set.length];
 		
 		for (int i = 0; i < set.length; i++) {
-			out[i] = parse(set[i]);
+			out[i] = parse(i,set[i]);
 		}
 
 		return out;
 	}
 	
-	public static Instruction parse(String s) {
+	public static Instruction parse(int index, String s) {
 		String label = "", op, args;
 		if (s.contains(":")) {
 			String[] lbl = s.split(":");
@@ -40,7 +40,7 @@ public class InstructionParser {
 		Instruction newInst = null;
 		
 		try {
-			newInst = new Instruction(label, op, args);
+			newInst = new Instruction(label, op, args, index << 2);
 		} catch (Exception e) {
 			System.err.println("lol it broke");
 			e.printStackTrace();

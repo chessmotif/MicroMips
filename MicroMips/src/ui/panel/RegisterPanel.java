@@ -41,8 +41,9 @@ public class RegisterPanel extends JPanel{
 		for (int i = 0; i < data.length; i++) {
 			String currValue = tb.getValueAt(i, 1) + "";
 			
-			if (!currValue.equals(data[i][1] + ""))
+			if (!currValue.equals(data[i][1] + "")) {
 				tb.setValueAt(data[i][1], i, 1);
+			}
 		}
 	}
 }
@@ -61,13 +62,10 @@ class RegisterTableListener implements TableModelListener {
         int column = e.getColumn();
         TableModel model = (TableModel)e.getSource();
         Object data = model.getValueAt(row, column);
-		
-		System.out.println("change detected at " + row + "," + column);
-		System.out.println(data + "");
-
+        
 		if (row < 31) {
         	try {
-        		PipelinedCPU.Regs[row] = Long.parseLong(data+"");
+        		PipelinedCPU.Regs[row+1] = Long.parseLong(data+"");
         	}
         	catch (Exception ex) {
         		String hex = "0123456789abcdef";
@@ -82,7 +80,7 @@ class RegisterTableListener implements TableModelListener {
         		
         		ans |= hex.indexOf(out.charAt(size - 1));
         		
-        		PipelinedCPU.Regs[row] = ans;
+        		PipelinedCPU.Regs[row+1] = ans;
         	}
         }
         else {
@@ -92,7 +90,6 @@ class RegisterTableListener implements TableModelListener {
         	catch (Exception ex) {
         		String hex = "0123456789abcdef";
         		String out = (data+"").replace(" ", "").toLowerCase();
-        		System.out.println("formatted - " + out);
         		int size = out.length();
         		long ans = 0;
         		

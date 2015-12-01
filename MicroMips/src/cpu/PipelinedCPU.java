@@ -1,6 +1,7 @@
 package cpu;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 
 import ui.MipsFrame;
 
@@ -19,11 +20,13 @@ public class PipelinedCPU {
 	public static State prev = new State();
 	public static State curr = new State();
 	public static PipelineMap map = new PipelineMap();
+	public static HashMap<String, Long> labelMap = new HashMap<String, Long>(); // DO THIS NIGGER
 	
 	private static boolean stallFlag = false;
 	private static boolean jumpFlag = false;
 	
 	public static void runOneClockCycle(MipsFrame p) {
+
 		if (jumpFlag) {
 			prev.IF_ID.IR = 0;
 			prev.ID_EX.IR = 0;
@@ -31,6 +34,8 @@ public class PipelinedCPU {
 		}
 
 		runWB();
+		Regs[0] = 0;
+
 		runMEM();
 		runEX();
 		runFAdd();
@@ -176,8 +181,8 @@ public class PipelinedCPU {
 		}
 		if (OpcodeDecoder.getType(prev.ID_EX.IR).equals("Extended R-type") && OpcodeDecoder.getFunc(prev.ID_EX.IR) == 0) {
 			if (prev.ID_EX.add == -1) {
-				curr.EX_MEM_FMult[0].IR = 0;
-				curr.EX_MEM_FMult[0].add = -1;
+				curr.EX_MEM_FAdd[0].IR = 0;
+				curr.EX_MEM_FAdd[0].add = -1;
 				return;
 			}
 			
@@ -217,6 +222,8 @@ public class PipelinedCPU {
 			curr.EX_MEM_FMult[0].IR = prev.ID_EX.IR;
 			curr.EX_MEM_FMult[0].add = prev.ID_EX.add;
 			curr.EX_MEM_FMult[0].ALUOutput = Float.floatToIntBits(Float.intBitsToFloat((int)prev.ID_EX.A) * Float.intBitsToFloat((int)prev.ID_EX.B));
+
+			map.signCycle(curr.EX_MEM_FMult[0].add, curr.cycle, "M1");
 		}
 		else {
 			curr.EX_MEM_FMult[0].IR = 0;
@@ -277,6 +284,8 @@ public class PipelinedCPU {
 				}
 				else { // branch
 					curr.EX_MEM.ALUOutput = prev.ID_EX.NPC + (prev.ID_EX.Imm << 2);
+					System.out.println(prev.ID_EX.A);
+					System.out.println(prev.ID_EX.B);
 					curr.EX_MEM.COND = prev.ID_EX.A == prev.ID_EX.B;
 				}
 				
@@ -292,7 +301,6 @@ public class PipelinedCPU {
 		}
 		
 		// check for dependency
-		
 		int EX_opcode = prev.EX_MEM.IR;
 		int MEM_opcode = prev.MEM_WB.IR;
 		int WB_opcode = prev.WB_REG.IR;
@@ -312,12 +320,12 @@ public class PipelinedCPU {
 		curr.ID_EX.IR = prev.IF_ID.IR;
 		switch(OpcodeDecoder.getType(curr.ID_EX.IR)) {
 			case "R-type":
-			case "J-type":
 				curr.ID_EX.A = Regs[OpcodeDecoder.getRA(curr.ID_EX.IR)];
 				curr.ID_EX.B = Regs[OpcodeDecoder.getRB(curr.ID_EX.IR)];
 				curr.ID_EX.Imm = OpcodeDecoder.getImm(curr.ID_EX.IR);
 				break;
 			case "I-type":
+			case "J-type":
 				curr.ID_EX.A = Regs[OpcodeDecoder.getRA(curr.ID_EX.IR)];
 				curr.ID_EX.B = Regs[OpcodeDecoder.getRB(curr.ID_EX.IR)];
 				curr.ID_EX.Imm = OpcodeDecoder.getImm(curr.ID_EX.IR);
@@ -325,7 +333,6 @@ public class PipelinedCPU {
 				if ((curr.ID_EX.Imm & 0x8000L) != 0) {
 					curr.ID_EX.Imm |= 0xFFFFFFFFFFFF0000L;
 				}
-				
 				break;
 			case "Mem-type":
 				curr.ID_EX.A = Regs[OpcodeDecoder.getRA(curr.ID_EX.IR)];
@@ -373,10 +380,13 @@ public class PipelinedCPU {
 		
 		switch(OpcodeDecoder.getType(toRun)) {
 			case "R-type":
-			case "I-type":
 			case "J-type":
 				arg1 = "R" + OpcodeDecoder.getRA(toRun);
 				arg2 = "R" + OpcodeDecoder.getRB(toRun);
+				break;
+			case "I-type":
+				arg1 = "R" + OpcodeDecoder.getRA(toRun);
+				arg2 = "";
 				break;
 			case "Mem-type":
 				arg1 = "R" + OpcodeDecoder.getRA(toRun);
@@ -423,12 +433,15 @@ public class PipelinedCPU {
 //		System.out.println(arg1 + " -> " + check);
 //		System.out.println(arg2 + " -> " + check);
 		
-		if (arg1.length() == 0 || arg2.length() == 0 || check.length() == 0)
+		if (check.length() == 0)
 			return false;
 		if (check.charAt(1) == '0')
 			return false;
 		
-		return arg1.matches(check) || arg2.matches(check);
+		boolean a1 = (arg1.length() != 0) && arg1.matches(check);
+		boolean a2 = (arg2.length() != 0) && arg2.matches(check);
+		
+		return a1 || a2;
 	}
 
 	public static void printRegisters() {
@@ -545,6 +558,24 @@ public class PipelinedCPU {
 		
 //		opcodeStack = new InstructionStack(0,0x4000);
 //		dataStack = new DataStack(0x2000,0x4000);
+		
+		HI = 0;
+		LO = 0;
+
+		// board state
+		PC = 0;
+		prev = new State();
+		curr = new State();
+		map.clear();
+	}
+	
+	public static void resetAll() {
+		// registers
+		Regs = new long[32];
+		FRegs = new long[12];
+		
+//		opcodeStack = new InstructionStack(0,0x4000);
+		dataStack = new DataStack(0x2000,0x4000);
 		
 		HI = 0;
 		LO = 0;

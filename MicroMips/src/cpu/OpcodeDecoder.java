@@ -119,9 +119,9 @@ public class OpcodeDecoder {
 			case 12:
 				return "ANDI R" + getRB(opcode) + ", R" + getRA(opcode) + ", " + String.format("%04x", getImm(opcode));
 			case 2:		
-				return "BEQ R" + getRB(opcode) + ", R" + getRA(opcode) + ", " + String.format("%04x", getImm(opcode));
-			case 4:
 				return "J " + String.format("%04x", getImm(opcode) << 2);
+			case 4:
+				return "BEQ R" + getRB(opcode) + ", R" + getRA(opcode) + ", " + String.format("%04x", getImm(opcode));
 			default:
 				return "";
 		}

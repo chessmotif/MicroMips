@@ -8,11 +8,16 @@ public class Instruction {
 	
 	public String label = "";
 	public int opcode;
+	public int add;
 	
-	public Instruction(String label, String op, String args) throws Exception {
+	public Instruction(String label, String op, String args, int add) {
 		this.op = op;
 		this.args = args;
-		
+		this.label = label;
+		this.add = add;
+	}
+	
+	public void generateOpcode() throws Exception {
 		String type = InstructionFormat.getType(op);
 		switch(type) {
 			case "R-type":
@@ -22,7 +27,7 @@ public class Instruction {
 				opcode = OpcodeGenerator.generateExtRTypeOpcode(op, args);
 				break;
 			case "I-type":
-				opcode = OpcodeGenerator.generateITypeOpcode(op, args);
+				opcode = OpcodeGenerator.generateITypeOpcode(add, op, args);
 				break;
 			case "J-type":
 				opcode = OpcodeGenerator.generateJTypeOpcode(op, args);
@@ -113,35 +118,78 @@ class OpcodeGenerator {
 		return output;
 	}
 	
-	public static int generateITypeOpcode(String op, String args) throws Exception {
+	public static int generateITypeOpcode(int startAdd, String op, String args) throws Exception {
 		String hexConvert = "0123456789ABCDEF";
+		String isHex = "[0-9A-Fa-f]+";
 		
 		String[] arr = args.split(",");
 		for (int i = 0; i < arr.length; i++)
 			arr[i] = arr[i].trim();
-
-		String add = arr[2];
-		if (add.length() > 4) {
-			add = add.substring(add.length()-4);
-		}
-		else if (add.length() < 4) {
-			String z = "0000";
-			add = add.length() < 4 ? z.substring(add.length()) + add : add;
-		}
 		
 		int output = 0;
 		
-		output |= InstructionFormat.getOpcode(op);
-		
-		output <<= 5;
-		output |= Integer.parseInt(arr[1].substring(1));
-		
-		output <<= 5;
-		output |= Integer.parseInt(arr[0].substring(1));
+		if (InstructionFormat.getOpcode(op) != 4) {
+			String add = arr[2];
+			if (add.length() > 4) {
+				add = add.substring(add.length()-4);
+			}
+			else if (add.length() < 4) {
+				String z = "0000";
+				add = add.length() < 4 ? z.substring(add.length()) + add : add;
+			}
+			
+			output |= InstructionFormat.getOpcode(op);
+			
+			output <<= 5;
+			output |= Integer.parseInt(arr[1].substring(1));
+			
+			output <<= 5;
+			output |= Integer.parseInt(arr[0].substring(1));
+	
+			for (int i = 0; i < 4; i++) {
+				output <<= 4;
+				output |= hexConvert.indexOf(add.charAt(i));
+			}
+		}
+		else {
+			output |= InstructionFormat.getOpcode(op);
+			
+			output <<= 5;
+			output |= Integer.parseInt(arr[0].substring(1));
+			
+			output <<= 5;
+			output |= Integer.parseInt(arr[1].substring(1));
+			
+			String add = arr[2];
+			boolean hex = add.matches(isHex);
+			
+			if (hex) {
+				if (add.length() > 4) {
+					add = add.substring(add.length()-4);
+				}
+				else if (add.length() < 4) {
+					String z = "0000";
+					add = add.length() < 4 ? z.substring(add.length()) + add : add;
+				}
+	
+				for (int i = 0; i < 4; i++) {
+					output <<= 4;
+					output |= hexConvert.indexOf(add.charAt(i));
+				}
+			}
+			else {
+				Long a = PipelinedCPU.labelMap.get(add);
+				
+				if (a == null)
+					throw new Exception("label not found");
+				
+				a = a - (startAdd + 4);
+				a >>= 2;
 
-		for (int i = 0; i < 4; i++) {
-			output <<= 4;
-			output |= hexConvert.indexOf(add.charAt(i));
+				output <<= 16;
+				
+				output |= a & 0xFFFFL;
+			}
 		}
 		
 		return output;
@@ -184,13 +232,43 @@ class OpcodeGenerator {
 		return output;
 	}
 
-	public static int generateJTypeOpcode(String op, String args) {
+	public static int generateJTypeOpcode(String op, String args) throws Exception {
+		String hexConvert = "0123456789ABCDEF";
+		String isHex = "[0-9A-Fa-f]+";
 		int output = 0;
 		
 		output |= InstructionFormat.getOpcode(op);
 		
-		output <<= 26;
-		output |= Integer.parseInt(args) >> 2;
+		if (args.matches(isHex)) {
+			if (args.length() > 4) {
+				args = args.substring(args.length()-4);
+			}
+			else if (args.length() < 4) {
+				String z = "0000";
+				args = args.length() < 4 ? z.substring(args.length()) + args : args;
+			}
+
+			int jumpAdd = 0;
+			for (int i = 0; i < 4; i++) {
+				jumpAdd <<= 4;
+				jumpAdd |= hexConvert.indexOf(args.charAt(i));
+			}
+			
+			output <<= 26;
+			output |= jumpAdd >> 2;
+		}
+		else {
+			Long a = PipelinedCPU.labelMap.get(args);
+			
+			if (a == null)
+				throw new Exception("label not found");
+			
+			a >>= 2;
+
+			output <<= 26;
+			
+			output |= a & 0xFFFFL;
+		}
 		
 		return output;
 	}

@@ -16,13 +16,14 @@ public class InstructionPanel extends JPanel {
 		this.setLayout(null);
 
 		Object[][] data = PipelinedCPU.getInstructionData();
-		Object[] cols = {"Address", "Opcode", "Instruction"};
+		Object[] cols = {"Address", "Label", "Opcode", "Instruction"};
 		
 		dataTable = new JTable(new DefaultTableModel(data, cols));
 		dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		dataTable.getColumnModel().getColumn(0).setPreferredWidth(50);
 		dataTable.getColumnModel().getColumn(1).setPreferredWidth(70);
-		dataTable.getColumnModel().getColumn(2).setPreferredWidth(xlen-138);
+		dataTable.getColumnModel().getColumn(2).setPreferredWidth(70);
+		dataTable.getColumnModel().getColumn(3).setPreferredWidth(xlen-208);
 
 		JScrollPane container = new JScrollPane(dataTable);
 		container.setBounds(0, 0, xlen, ylen);
